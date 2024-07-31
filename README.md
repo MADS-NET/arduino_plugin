@@ -45,3 +45,7 @@ The test main takes two alternative arguments: the path (or name, on Windows) to
 The `arduino` folder contains a sketch that can be customized to read different analog or digital pin and publish a corresponding JSON string on serial port.
 
 The script supports a simple command parsing interface that allows to configure some settings on the Arduino side. Look at the arduino code for details, but this allows to set the `cfg_cmg` setting as `250p20t`, for example, to set the sampling period to 250 ms and the threshold to 20 (in the range 0–1023).
+
+## Issues
+
+Currently, on Windows sometimes it gets stuck. To unlock it, open the serialport monitor with the Arduino IDE, and close it. 
