@@ -17,6 +17,7 @@
 #include <pugg/Kernel.h>
 #include <source.hpp>
 // other includes as needed here
+#include <thread>
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -61,6 +62,15 @@ class ArduinoPlugin : public Source<json> {
           cerr << "Error: " << e.what() << endl;
         _error = e.what();
         return return_type::critical;
+      }
+      if (!_serialPort->isOpen()) {
+        if (!_params["silent"])
+          cerr << "Error: could not open port " << _params["port"] << endl;
+        _error = "Could not open port";
+        return return_type::critical;
+      } else {
+        if (!_params["silent"])
+          cerr << "Connection with " << _params["port"] << " opened" << endl;
       }
     }
     return return_type::success;
@@ -189,7 +199,7 @@ int main(int argc, char const *argv[]) {
   params["port"] = argv[1];
   params["baudrate"] = 115200;
   params["silent"] = false;
-  params["cfg_cmd"] = "500p";
+  //params["cfg_cmd"] = "500p";
   plugin.set_params(&params);
 
   while (running) {
