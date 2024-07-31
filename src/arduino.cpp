@@ -161,6 +161,7 @@ int main(int argc, char const *argv[]) {
   params["port"] = argv[1];
   params["baudrate"] = 115200;
   params["silent"] = false;
+  params["cfg_cmd"] = "500p";
   plugin.set_params(&params);
 
   while (running) {

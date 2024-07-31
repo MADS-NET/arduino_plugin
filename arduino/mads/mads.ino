@@ -38,7 +38,7 @@ void setup() {
 
 template<typename T>
 T threshold_value(T value, T threshold) {
-  return value > threshold ? value : threshold;
+  return value > threshold ? value : 0;
 } 
 
 void loop() {
