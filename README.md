@@ -9,7 +9,7 @@ Linux and MacOS:
 ```bash
 cmake -Bbuild -DCMAKE_INSTALL_PREFIX="$(mads -p)"
 cmake --build build -j4
-cmake --install build
+sudo cmake --install build
 ```
 
 Windows:
