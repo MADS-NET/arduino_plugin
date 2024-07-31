@@ -1,4 +1,4 @@
-# Arduino plugin dor MADS
+# Arduino plugin for MADS
 
 This is a source plugin for MADS that reads a JSON string published by an Arduino connected via serial port on the MADS network.
 
