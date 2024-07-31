@@ -22,14 +22,23 @@ cmake --install build --config Release
 
 ## INI settings
 
+The plugin supports the following settings in the INI file:
+
 ```ini
 [arduino]
 port = /dev/ttyUSB0
 baudrate = 115200
 silent = true
-# the following can be omitted
+connection_timeout = 5000
+# the following can be omitted; if so, it is not used at all
 cfg_cmd = ""
 ```
+
+All settings are optional; if omitted, the default values are used.
+
+## Executable demo
+
+The test main takes two alternative arguments: the path (or name, on Windows) to the serial port, or the `-e`, which enumerates all available ports and exits.
 
 ## Arduino code
 

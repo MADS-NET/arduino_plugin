@@ -117,11 +117,12 @@ public:
     _params["baudrate"] = 115200;
     _params["silent"] = true;
     _params["connection_timeout"] = 5000u;
+    _params["cfg_cmd"] = "";
     _params.merge_patch(*(json *)params);
     if (setup() != return_type::success) {
       throw std::runtime_error("Error setting up serial port");
     }
-    if (_params.find("cfg_cmd") != _params.end()) {
+    if (_params.find("cfg_cmd") != _params.end() && !_params["cfg_cmd"].empty()) {
       _serialPort->write(_params["cfg_cmd"].get<string>().c_str());
       _serialPort->write("\n");
     }
@@ -199,7 +200,7 @@ int main(int argc, char const *argv[]) {
   params["port"] = argv[1];
   params["baudrate"] = 115200;
   params["silent"] = false;
-  //params["cfg_cmd"] = "500p";
+  params["cfg_cmd"] = "500p";
   plugin.set_params(&params);
 
   while (running) {
