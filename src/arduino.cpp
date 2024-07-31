@@ -40,6 +40,7 @@ class ArduinoPlugin : public Source<json> {
 
   return_type setup() {
     if (_serialPort == nullptr) {
+#ifndef _WIN32
       if (filesystem::exists(_params["port"].get<string>()) == false) {
         if (!_params["silent"]) {
           cerr << "Error: port " << _params["port"].get<string>()
@@ -48,9 +49,13 @@ class ArduinoPlugin : public Source<json> {
         _error = "Port does not exist";
         return return_type::critical;
       }
+#endif
       try {
-        _serialPort = new serial::Serial(_params["port"].get<string>().c_str(),
-                                     _params["baudrate"].get<unsigned>(), serial::Timeout::simpleTimeout(1000));
+        _serialPort = new serial::Serial(
+            _params["port"].get<string>().c_str(),
+            _params["baudrate"].get<unsigned>(),
+            serial::Timeout::simpleTimeout(
+                _params["connection_timeout"].get<unsigned>()));
       } catch (std::exception &e) {
         if (!_params["silent"])
           cerr << "Error: " << e.what() << endl;
@@ -98,6 +103,7 @@ public:
     _params["port"] = "/dev/ttyUSB0";
     _params["baudrate"] = 115200;
     _params["silent"] = true;
+    _params["connection_timeout"] = 5000u;
     _params.merge_patch(*(json *)params);
     if (setup() != return_type::success) {
       throw std::runtime_error("Error setting up serial port");
@@ -111,7 +117,9 @@ public:
   map<string, string> info() override {
     return {{"port", _params["port"].get<string>()},
             {"baudrate", to_string(_params["baudrate"].get<unsigned>())},
-            {"cfg_cmd", _params["cfg_cmd"].get<string>()}};
+            {"cfg_cmd", _params["cfg_cmd"].get<string>()},
+            {"connection_timeout",
+             to_string(_params["connection_timeout"].get<unsigned>())}};
   };
 
 private:
@@ -142,6 +150,18 @@ For testing purposes, when directly executing the plugin
 
 #include <csignal>
 
+void enumerate_ports() {
+  vector<serial::PortInfo> devices_found = serial::list_ports();
+  vector<serial::PortInfo>::iterator iter = devices_found.begin();
+
+  while (iter != devices_found.end()) {
+    serial::PortInfo device = *iter++;
+
+    printf("%s: %s, %s\n", device.port.c_str(), device.description.c_str(),
+           device.hardware_id.c_str());
+  }
+}
+
 static bool running = true;
 
 int main(int argc, char const *argv[]) {
@@ -150,8 +170,13 @@ int main(int argc, char const *argv[]) {
   unsigned long i = 0;
 
   if (argc < 2) {
-    cout << "Usage: " << argv[0] << " <port>" << endl;
+    cout << "Usage: " << argv[0] << " <port> | -e" << endl;
     return 1;
+  }
+
+  if (string(argv[1]) == "-e") {
+    enumerate_ports();
+    return 0;
   }
 
   signal(SIGINT, [](int) { running = false; });
@@ -166,7 +191,8 @@ int main(int argc, char const *argv[]) {
 
   while (running) {
     plugin.get_output(output);
-    cout << "message #" << setfill('_') << setw(6) << i++ << ": " << output << endl;
+    cout << "message #" << setfill('_') << setw(6) << i++ << ": " << output
+         << endl;
   }
 
   return 0;
