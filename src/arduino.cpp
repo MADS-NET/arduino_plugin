@@ -17,7 +17,13 @@
 #include <pugg/Kernel.h>
 #include <source.hpp>
 // other includes as needed here
-#include "serialport.hpp"
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+
+#include <serial/serial.h>
 
 // Define the name of the plugin
 #ifndef PLUGIN_NAME
@@ -43,8 +49,8 @@ class ArduinoPlugin : public Source<json> {
         return return_type::critical;
       }
       try {
-        _serialPort = new SerialPort(_params["port"].get<string>().c_str(),
-                                     _params["baudrate"].get<unsigned>());
+        _serialPort = new serial::Serial(_params["port"].get<string>().c_str(),
+                                     _params["baudrate"].get<unsigned>(), serial::Timeout::simpleTimeout(1000));
       } catch (std::exception &e) {
         if (!_params["silent"])
           cerr << "Error: " << e.what() << endl;
@@ -58,6 +64,8 @@ class ArduinoPlugin : public Source<json> {
 public:
   ~ArduinoPlugin() {
     if (_serialPort != nullptr) {
+      if (_serialPort->isOpen())
+        _serialPort->close();
       delete _serialPort;
       if (!_params["silent"])
         cerr << "Connection with " << _params["port"] << " closed" << endl;
@@ -73,7 +81,7 @@ public:
     out.clear();
     do {
       line.clear();
-      _serialPort->readLine(line);
+      line = _serialPort->readline();
       try {
         out = json::parse(line);
         success = true;
@@ -108,7 +116,7 @@ public:
 
 private:
   json _data, _params;
-  SerialPort *_serialPort = nullptr;
+  serial::Serial *_serialPort = nullptr;
 };
 
 /*

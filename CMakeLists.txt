@@ -52,7 +52,13 @@ FetchContent_Declare(plugin
   GIT_TAG        HEAD
   GIT_SHALLOW    TRUE
 )
-FetchContent_MakeAvailable(pugg json)
+
+FetchContent_Declare(serialport
+  GIT_REPOSITORY https://github.com/pbosetti/serial.git
+  GIT_TAG        HEAD
+  GIT_SHALLOW    TRUE
+)
+FetchContent_MakeAvailable(pugg json serialport)
 FetchContent_Populate(plugin)
 
 include_directories(${plugin_SOURCE_DIR}/src)
@@ -94,9 +100,10 @@ else()
   set(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib;/usr/local/lib")
 endif()
 include_directories(${json_SOURCE_DIR}/include)
+include_directories(${serial_SOURCE_DIR}/include)
 
 # These plugins are always build and use for testing
-add_plugin(arduino SRCS ${SRC_DIR}/serialport.cpp)
+add_plugin(arduino LIBS serial)
 
 
 # INSTALL ######################################################################

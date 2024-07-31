@@ -4,10 +4,20 @@ This is a source plugin for MADS that reads a JSON string published by an Arduin
 
 ## Installation
 
+Linux and MacOS:
+
 ```bash
-cmake -Bbuild -DCMAKE_INSTALL_PREFIX=$(mads -p)
+cmake -Bbuild -DCMAKE_INSTALL_PREFIX="$(mads -p)"
 cmake --build build -j4
 cmake --install build
+```
+
+Windows:
+
+```powershell
+cmake -Bbuild -DCMAKE_INSTALL_PREFIX="$(mads -p)"
+cmake --build build --config Release
+cmake --install build --config Release
 ```
 
 ## INI settings
