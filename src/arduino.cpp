@@ -84,6 +84,9 @@ public:
     string line;
     bool success = false;
     out.clear();
+    if (!_serialPort->isOpen()) {
+      _serialPort->open();
+    }
     do {
       line.clear();
       line = _serialPort->readline();
