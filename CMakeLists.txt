@@ -47,18 +47,19 @@ FetchContent_Declare(json
   GIT_SHALLOW    TRUE
 )
 
-FetchContent_Populate(plugin 
-  GIT_REPOSITORY https://github.com/pbosetti/mads_plugin.git
-  GIT_TAG        HEAD
-  GIT_SHALLOW    TRUE
-)
-
 FetchContent_Declare(serialport
   GIT_REPOSITORY https://github.com/pbosetti/serial.git
   GIT_TAG        HEAD
   GIT_SHALLOW    TRUE
 )
+
 FetchContent_MakeAvailable(pugg json serialport)
+
+FetchContent_Populate(plugin 
+  GIT_REPOSITORY https://github.com/pbosetti/mads_plugin.git
+  GIT_TAG        HEAD
+  GIT_SHALLOW    TRUE
+)
 
 include_directories(${plugin_SOURCE_DIR}/src)
 
