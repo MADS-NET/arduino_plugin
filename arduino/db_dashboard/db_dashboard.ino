@@ -2,24 +2,11 @@
 #define VERSION "1.1.0"
 #define BAUD_RATE 115200
 // Digital inputs
-#define DI1 3
-#define DI2 4
-#define DI3 5
-// Analog pins
-#define AI1 A0
-#define AI2 A1
-#define AI3 A2
-#define AI4 A3
-#define AI5 A4
-#ifndef LEDR
-#define LEDR 23u
-#endif
-#ifndef LEDG
-#define LEDG 24u
-#endif
-#ifndef LEDB
-#define LEDB 26u
-#endif
+#define DI1 9
+#define DI2 10
+#define DI3 11
+#define DI4 12
+
 // Main lood delay: this is typically a small value, used to save power
 #define DELAY 40UL     // microseconds
 // Sampling period: this is the time between samples, must be larger than DELAY
@@ -27,32 +14,57 @@
 // Topmost field in the output JSON
 #define DATA_FIELD "data"
 
-JsonDocument doc;
-String out;
-const double to_V = 5.0 / 1024.0;
-const double to_A = 20.0 / 2.8;
+JsonDocument Doc;
+String Out;
+volatile bool Changed = false, MarkerIn = false;
+String Source = "";
+unsigned long DebounceDelay = 500;
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(BAUD_RATE);
   Serial.print("# Starting JSON reader v" VERSION "\n");
   pinMode(LED_BUILTIN, OUTPUT);
-  pinMode(DI1, INPUT_PULLDOWN);
-  pinMode(DI2, INPUT_PULLDOWN);
-  pinMode(DI3, INPUT_PULLDOWN);
-
+  pinMode(DI1, INPUT);
+  pinMode(DI2, INPUT_PULLUP);
+  pinMode(DI3, INPUT_PULLUP);
+  pinMode(DI4, INPUT);
+  attachInterrupt(digitalPinToInterrupt(DI1), detect_change_DI1, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(DI2), detect_change_debounce_DI2, RISING);
+  attachInterrupt(digitalPinToInterrupt(DI3), detect_change_debounce_DI3, RISING);
 }
 
-template<typename T>
-T threshold_value(T value, T threshold) {
-  return value > threshold ? value : 0;
-} 
+void detect_change_DI1() {
+  Changed = true;
+  Source = String("logging ") + (digitalRead(DI1) ? "On" : "Off");
+  MarkerIn = false;
+}
+
+void detect_change_debounce_DI2() {
+  static unsigned long last = 0;
+
+  if (millis() - last > DebounceDelay) {
+    Changed = true;
+    last = millis();
+    MarkerIn = !MarkerIn;
+    Source = String("marker ") + (MarkerIn ? "in" : "out");
+  }
+}
+
+void detect_change_debounce_DI3() {
+  static unsigned long last = 0;
+  if (millis() - last > DebounceDelay) {
+    Changed = true;
+    last = millis();
+    Source = "marker";
+  }
+}
 
 void loop() {
   static unsigned long prev_time = 0;
   static unsigned long timestep_us = TIMESTEP * 1000;
   static unsigned long delay = DELAY;
-  static unsigned int threshold = 1;
+  static unsigned long count = 0;
   static bool onoff = LOW, pause = false, raw = false;
   unsigned long now = micros();
   static unsigned long v = 0; // accumulator for serial values
@@ -79,9 +91,8 @@ void loop() {
         delay = constrain(v, 1, timestep_us / 10.0);
         v = 0;
         break;
-      case 't': // set threshold to the current accumulator value
-        threshold = constrain(v, 0, 1023);
-        v = 0;
+      case 'b':
+        DebounceDelay = constrain(v, 0, 5000);
         break;
       case 'x': // toggle pause mode
         pause = !pause;
@@ -96,9 +107,9 @@ void loop() {
         Serial.print(timestep_us / 1000);
         Serial.print(" ms)\n- 30d  set loop delay to 30 microseconds (now ");
         Serial.print(delay);
-        Serial.print(" us)\n- 280t set threshold to 280 (now ");
-        Serial.print(threshold);
-        Serial.print(")\n");
+        Serial.print(" us)\n- 500b  set debounce delay to 500 milliseconds (now ");
+        Serial.print(DebounceDelay);
+        Serial.print(" ms)\n");
         Serial.print("- x    toggle pause\n");
         Serial.print("- r    toggle raw output\n");
         break;
@@ -110,45 +121,24 @@ void loop() {
   if (pause) return;
 
   if (now - prev_time >= timestep_us) {
-    bool active = false;
     digitalWrite(LED_BUILTIN, onoff);
     onoff = !onoff;
-    doc["millis"] = millis();
+    if (Changed) {
+      Doc.clear();
+      Doc["millis"] = millis();
+      Doc["count"] = count;
 
-    // Digital inputs
-    doc[DATA_FIELD]["DI1"] = digitalRead(DI1);
-    doc[DATA_FIELD]["DI2"] = digitalRead(DI2);
-    doc[DATA_FIELD]["DI3"] = digitalRead(DI3);
+      // Digital inputs
+      Doc[DATA_FIELD]["event"] = Source;
+      Doc[DATA_FIELD]["flag"] = digitalRead(DI4) == HIGH;
 
-    // Analog Inputs
-    doc[DATA_FIELD]["AI1"] = threshold_value<int>(analogRead(AI1), threshold);
-    active = active || (doc[DATA_FIELD]["AI1"].as<double>() > 0);
-    doc[DATA_FIELD]["AI2"] = threshold_value<int>(analogRead(AI2), threshold);
-    active = active || (doc[DATA_FIELD]["AI2"].as<double>() > 0);
-    doc[DATA_FIELD]["AI3"] = threshold_value<int>(analogRead(AI3), threshold);
-    active = active || (doc[DATA_FIELD]["AI3"].as<double>() > 0);
-    doc[DATA_FIELD]["AI4"] = threshold_value<int>(analogRead(AI4), threshold);
-    active = active || (doc[DATA_FIELD]["AI4"].as<double>() > 0);
-    doc[DATA_FIELD]["AI5"] = threshold_value<int>(analogRead(AI5), threshold);
-    active = active || (doc[DATA_FIELD]["AI5"].as<double>() > 0);
-    if (active > 0) {
-      if (raw) {
-        Serial.print(doc[DATA_FIELD]["AI1"].as<double>());
-        Serial.print(" "); 
-        Serial.print(doc[DATA_FIELD]["AI2"].as<double>());
-        Serial.print(" "); 
-        Serial.print(doc[DATA_FIELD]["AI3"].as<double>());
-        Serial.print(" "); 
-        Serial.print(doc[DATA_FIELD]["AI4"].as<double>());
-        Serial.print(" "); 
-        Serial.print(doc[DATA_FIELD]["AI5"].as<double>());
-        Serial.print("\n");
-      } else {
-        serializeJson(doc, out);
-        Serial.print(out);
-        Serial.print("\n");
-      }
+      serializeJson(Doc, Out);
+      Serial.print(Out);
+      Serial.print("\n");
+      Changed = false;
+      count++;
     }
+
     prev_time = now;
   }
   delayMicroseconds(delay);

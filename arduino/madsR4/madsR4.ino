@@ -51,6 +51,9 @@ void setup() {
   pinMode(AI3, INPUT);
   pinMode(AI4, INPUT);
   pinMode(AI5, INPUT);
+  pinMode(DI1, INPUT_PULLDOWN);
+  pinMode(DI2, INPUT_PULLDOWN);
+  pinMode(DI3, INPUT_PULLDOWN);
 }
 
 template<typename T>

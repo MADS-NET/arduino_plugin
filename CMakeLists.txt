@@ -104,6 +104,7 @@ include_directories(${serial_SOURCE_DIR}/include)
 
 # These plugins are always build and use for testing
 add_plugin(arduino LIBS serial)
+add_plugin(arduino_dashboard LIBS serial)
 
 
 # INSTALL ######################################################################
