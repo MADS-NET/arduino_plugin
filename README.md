@@ -26,7 +26,7 @@ The plugin supports the following settings in the INI file:
 
 ```ini
 [arduino]
-port = /dev/ttyUSB0
+port = "/dev/ttyUSB0"
 baudrate = 115200
 silent = true
 connection_timeout = 5000
