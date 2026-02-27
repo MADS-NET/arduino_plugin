@@ -57,7 +57,7 @@ FetchContent_MakeAvailable(pugg json serialport)
 
 FetchContent_Populate(plugin 
   GIT_REPOSITORY https://github.com/pbosetti/mads_plugin.git
-  GIT_TAG        HEAD
+  GIT_TAG        v2.0-P7
   GIT_SHALLOW    TRUE
 )
 

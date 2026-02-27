@@ -89,8 +89,7 @@ public:
 
   string kind() override { return PLUGIN_NAME; }
 
-  return_type get_output(json &out,
-                         std::vector<unsigned char> *blob = nullptr) override {
+  return_type get_output(json &out, vector<unsigned char> *blob = nullptr) override {
     string line;
     bool success = false;
     out.clear();
@@ -111,14 +110,14 @@ public:
     return return_type::success;
   }
 
-  void set_params(void const *params) override {
+  void set_params(const json &params) override {
     Source::set_params(params);
     _params["port"] = "/dev/ttyUSB0";
     _params["baudrate"] = 115200;
     _params["silent"] = true;
     _params["connection_timeout"] = 5000u;
     _params["cfg_cmd"] = "";
-    _params.merge_patch(*(json *)params);
+    _params.merge_patch(params);
     if (setup() != return_type::success) {
       throw std::runtime_error("Error setting up serial port");
     }
@@ -201,7 +200,7 @@ int main(int argc, char const *argv[]) {
   params["baudrate"] = 115200;
   params["silent"] = false;
   params["cfg_cmd"] = "500p";
-  plugin.set_params(&params);
+  plugin.set_params(params);
 
   while (running) {
     plugin.get_output(output);
