@@ -1,10 +1,21 @@
+[![Build and Release](https://github.com/MADS-NET/arduino_plugin/actions/workflows/release.yml/badge.svg)](https://github.com/MADS-NET/arduino_plugin/actions/workflows/release.yml) ![MADS package](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2FMADS-NET%2F.github%2Fmain%2Fprofile%2Fpackages.json&query=%24.packages.%5B'arduino.plugin'%5D.type&label=mads%20package&logo=C%2B%2B)
+
 # Arduino plugin for MADS
 
 This is a source plugin for MADS that reads a JSON string published by an Arduino connected via serial port on the MADS network.
 
 > This plugin has been updated for MADS v2
 
-## Installation
+## Package install
+
+with MADS v2.1.1 or later, install with:
+
+```bash
+mads package --install arduino.plugin
+```
+
+
+## Install from binaries
 
 Linux and MacOS:
 

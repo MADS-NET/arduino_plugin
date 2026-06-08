@@ -1,0 +1,29 @@
+{
+  "name": "arduino_plugin",
+  "requirements": {
+    "Common": {
+      "note": [
+        "Requires MADS 2.1.0 or later",
+        "Requires an Arduino properly programmed",
+        "Look at https://github.com/MADS-NET/arduino_plugin/tree/main/arduino for examples"
+      ] 
+    },
+    "Windows": {
+      "note": ["Requires Windows 10 or later"],
+      "commands": []
+    },
+    "Linux": {
+      "note": ["Requires Ubuntu 22.04 or later"],
+      "commands": []
+    },
+    "macOS": {
+      "note": [
+        "Requires macOS 10.15 or later",
+        "You might need to remove the quarantine protection on the plugin once installed"
+      ],
+      "commands": [
+        "xattr -d com.apple.quarantine $(mads -p)/lib/arduino.plugin"
+      ]
+    }
+  }
+}
