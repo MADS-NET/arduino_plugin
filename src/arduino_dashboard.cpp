@@ -162,7 +162,7 @@ private:
                 |___/
 Enable the class as plugin
 */
-INSTALL_SOURCE_DRIVER(ArduinoDashboardPlugin, json)
+MADS_REGISTER_PLUGINS(ArduinoDashboardPlugin)
 
 /*
                   _

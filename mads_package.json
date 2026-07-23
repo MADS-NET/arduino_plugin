@@ -3,7 +3,7 @@
   "requirements": {
     "Common": {
       "note": [
-        "Requires MADS 2.1.0 or later",
+        "Requires MADS 2.4.0 or later",
         "Requires an Arduino properly programmed",
         "Look at https://github.com/MADS-NET/arduino_plugin/tree/main/arduino for examples"
       ] 

@@ -37,7 +37,7 @@ include(FetchContent)
 # pugg is for the plugin system
 FetchContent_Declare(pugg 
   GIT_REPOSITORY https://github.com/pbosetti/pugg.git
-  GIT_TAG        1.1.0
+  GIT_TAG        1.2.0
   GIT_SHALLOW    TRUE
   EXCLUDE_FROM_ALL
 )
@@ -46,7 +46,7 @@ set(BUILD_TESTING OFF CACHE INTERNAL "")
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 FetchContent_Declare(json
   GIT_REPOSITORY https://github.com/nlohmann/json.git
-  GIT_TAG        v3.11.3
+  GIT_TAG        v3.12.0
   GIT_SHALLOW    TRUE
   EXCLUDE_FROM_ALL
 )
@@ -62,7 +62,7 @@ FetchContent_MakeAvailable(pugg json serialport)
 
 FetchContent_Populate(plugin 
   GIT_REPOSITORY https://github.com/pbosetti/mads_plugin.git
-  GIT_TAG        v2.3-P7
+  GIT_TAG        v2.4-P8
   GIT_SHALLOW    TRUE
 )
 

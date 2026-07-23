@@ -149,7 +149,7 @@ private:
                 |___/
 Enable the class as plugin
 */
-INSTALL_SOURCE_DRIVER(ArduinoPlugin, json)
+MADS_REGISTER_PLUGINS(ArduinoPlugin)
 
 /*
                   _
