@@ -23,7 +23,7 @@ message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}") 
 
 # PROJECT SETTINGS #############################################################
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(SRC_DIR ${CMAKE_CURRENT_LIST_DIR}/src)
 
@@ -51,22 +51,14 @@ FetchContent_Declare(json
   EXCLUDE_FROM_ALL
 )
 
-FetchContent_Declare(serialport
-  GIT_REPOSITORY https://github.com/pbosetti/serial.git
-  GIT_TAG        HEAD
-  GIT_SHALLOW    TRUE
-  EXCLUDE_FROM_ALL
-)
-
-FetchContent_MakeAvailable(pugg json serialport)
-
-FetchContent_Populate(plugin 
+set(MADS_PLUGIN_BUILD_ADDONS ON CACHE INTERNAL "")
+FetchContent_Declare(plugin 
   GIT_REPOSITORY https://github.com/pbosetti/mads_plugin.git
-  GIT_TAG        v2.4-P8
+  GIT_TAG        v2.5-P8
   GIT_SHALLOW    TRUE
 )
 
-include_directories(${plugin_SOURCE_DIR}/src)
+FetchContent_MakeAvailable(pugg json plugin)
 
 
 # MACROS #######################################################################
@@ -108,8 +100,8 @@ include_directories(${json_SOURCE_DIR}/include)
 include_directories(${serial_SOURCE_DIR}/include)
 
 # These plugins are always build and use for testing
-add_plugin(arduino LIBS serial)
-add_plugin(arduino_dashboard LIBS serial)
+add_plugin(arduino LIBS MADS::Plugin MADS::PluginAddonsLibrary)
+add_plugin(arduino_dashboard LIBS MADS::Plugin MADS::PluginAddonsLibrary)
 
 
 # INSTALL ######################################################################

@@ -17,6 +17,7 @@
 #include <pugg/Kernel.h>
 #include <source.hpp>
 // other includes as needed here
+#include <chrono>
 #include <thread>
 #ifdef _WIN32
 #include <windows.h>
@@ -24,7 +25,7 @@
 #include <unistd.h>
 #endif
 
-#include <serial/serial.h>
+#include <serialport.hpp>
 
 // Define the name of the plugin
 #ifndef PLUGIN_NAME
@@ -39,71 +40,28 @@ using json = nlohmann::json;
 // implementing the actual functionality
 class ArduinoDashboardPlugin : public Source<json> {
 
-  return_type setup() {
-    if (_serialPort == nullptr) {
-#ifndef _WIN32
-      if (filesystem::exists(_params["port"].get<string>()) == false) {
-        if (!_params["silent"]) {
-          cerr << "Error: port " << _params["port"].get<string>()
-               << " does not exist" << endl;
-        }
-        _error = "Port does not exist";
-        return return_type::critical;
-      }
-#endif
-      try {
-        _serialPort = new serial::Serial(
-            _params["port"].get<string>().c_str(),
-            _params["baudrate"].get<unsigned>(),
-            serial::Timeout::simpleTimeout(
-                _params["connection_timeout"].get<unsigned>()));
-      } catch (std::exception &e) {
-        if (!_params["silent"])
-          cerr << "Error: " << e.what() << endl;
-        _error = e.what();
-        return return_type::critical;
-      }
-      if (!_serialPort->isOpen()) {
-        if (!_params["silent"])
-          cerr << "Error: could not open port " << _params["port"] << endl;
-        _error = "Could not open port";
-        return return_type::critical;
-      } else {
-        if (!_params["silent"])
-          cerr << "Connection with " << _params["port"] << " opened" << endl;
-      }
-    }
-    return return_type::success;
-  }
-
 public:
-  ~ArduinoDashboardPlugin() {
-    if (_serialPort != nullptr) {
-      if (_serialPort->isOpen())
-        _serialPort->close();
-      delete _serialPort;
-      if (!_params["silent"])
-        cerr << "Connection with " << _params["port"] << " closed" << endl;
-    }
-  }
-
   string kind() override { return PLUGIN_NAME; }
 
-  return_type get_output(json &out, vector<unsigned char> *blob = nullptr) override {
+  return_type get_output(json &out,
+                         vector<unsigned char> *blob = nullptr) override {
+    if (_setup_error) {
+      return return_type::critical;
+    }
     string line;
     json data;
     bool success = false;
     out.clear();
-    if (!_serialPort->isOpen()) {
-      _serialPort->open();
-    }
+
     do {
       line.clear();
-      line = _serialPort->readline();
+      _serialPort->read_line(line);
       try {
         data = json::parse(line);
         success = true;
       } catch (json::exception &e) {
+        _error = e.what();
+        return return_type::error;
       }
     } while (success == false);
 
@@ -115,7 +73,7 @@ public:
       out["pause"] = false;
     } else if (data["data"]["event"] == "logging Off") {
       out["pause"] = true;
-    } 
+    }
 
     if (!_agent_id.empty())
       out["agent_id"] = _agent_id;
@@ -130,10 +88,31 @@ public:
     _params["connection_timeout"] = 5000u;
     _params["cfg_cmd"] = "";
     _params.merge_patch(params);
-    if (setup() != return_type::success) {
-      throw std::runtime_error("Error setting up serial port");
+
+    auto ports = SerialPort::available_ports();
+    if (std::find(ports.begin(), ports.end(), _params["port"].get<string>()) ==
+        ports.end()) {
+      _error = "Port does not exist";
+      _setup_error = true;
+      return;
     }
-    if (_params.find("cfg_cmd") != _params.end() && !_params["cfg_cmd"].empty()) {
+
+    auto config = SerialPort::Config{};
+    config.baud_rate = _params["baudrate"].get<unsigned>();
+    config.timeout =
+        chrono::milliseconds(_params["connection_timeout"].get<unsigned>());
+
+    try {
+      _serialPort =
+          make_unique<SerialPort>(_params["port"].get<string>(), config);
+    } catch (std::exception &e) {
+      _error = e.what();
+      _setup_error = true;
+      return;
+    }
+
+    if (_params.find("cfg_cmd") != _params.end() &&
+        !_params["cfg_cmd"].empty()) {
       _serialPort->write(_params["cfg_cmd"].get<string>().c_str());
       _serialPort->write("\n");
     }
@@ -148,8 +127,9 @@ public:
   };
 
 private:
+  bool _setup_error = false;
   json _data, _params;
-  serial::Serial *_serialPort = nullptr;
+  unique_ptr<SerialPort> _serialPort;
   array<bool, 4> _channels = {false, false, false, false};
 };
 
@@ -176,18 +156,6 @@ For testing purposes, when directly executing the plugin
 
 #include <csignal>
 
-void enumerate_ports() {
-  vector<serial::PortInfo> devices_found = serial::list_ports();
-  vector<serial::PortInfo>::iterator iter = devices_found.begin();
-
-  while (iter != devices_found.end()) {
-    serial::PortInfo device = *iter++;
-
-    printf("%s: %s, %s\n", device.port.c_str(), device.description.c_str(),
-           device.hardware_id.c_str());
-  }
-}
-
 static bool running = true;
 
 int main(int argc, char const *argv[]) {
@@ -201,7 +169,10 @@ int main(int argc, char const *argv[]) {
   }
 
   if (string(argv[1]) == "-e") {
-    enumerate_ports();
+    auto ports = SerialPort::available_ports();
+    for (const auto &port : ports) {
+      cout << port << endl;
+    }
     return 0;
   }
 
@@ -217,8 +188,8 @@ int main(int argc, char const *argv[]) {
 
   while (running) {
     plugin.get_output(output);
-    cout << "message #" << setfill('_') << setw(6) << i++ << ": " << output
-         << endl;
+    cout << "message #" << setfill('0') << setw(6) << i++ << ": "
+         << output.dump() << endl;
   }
 
   return 0;
