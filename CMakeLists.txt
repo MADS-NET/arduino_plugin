@@ -12,7 +12,7 @@
 # NOTICE: MADS Version 1.0.0
 cmake_minimum_required(VERSION 3.28)
 set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
-project(arduino VERSION 2.3.0 LANGUAGES CXX)
+project(arduino VERSION 2.5.0 LANGUAGES CXX)
 if(CMAKE_BUILD_TYPE STREQUAL "")
   set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build." FORCE)
 endif()
