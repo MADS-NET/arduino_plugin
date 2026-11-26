@@ -4,7 +4,7 @@
 
 This is a source plugin for MADS that reads a JSON string published by an Arduino connected via serial port on the MADS network.
 
-> This plugin has been updated for MADS v2
+> This plugin has been updated for MADS v3
 
 ## Package install
 
