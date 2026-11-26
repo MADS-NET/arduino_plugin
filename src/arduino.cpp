@@ -55,11 +55,21 @@ public:
     do {
       line.clear();
       _serialPort->read_line(line);
+      // board (re)booted; the banner may follow junk or a truncated line
+      if (line.find("# Starting") != string::npos) {
+        send_cfg();
+        return return_type::retry;
+      }
+      if (line.rfind("#", 0) == 0) // comment line from the sketch
+        return return_type::retry;
       try {
         out = json::parse(line);
         success = true;
       } catch (json::exception &e) {
         _error = e.what();
+        // the message quotes the raw serial bytes: keep it valid UTF-8
+        for (char &c : _error)
+          if (static_cast<unsigned char>(c) >= 0x80) c = '?';
         return return_type::error;
       }
     } while (success == false);
@@ -99,11 +109,7 @@ public:
       return;
     }
 
-    if (_params.find("cfg_cmd") != _params.end() &&
-        !_params["cfg_cmd"].empty()) {
-      _serialPort->write(_params["cfg_cmd"].get<string>().c_str());
-      _serialPort->write("\n");
-    }
+    send_cfg();
   }
 
   map<string, string> info() override {
@@ -115,6 +121,11 @@ public:
   };
 
 private:
+  void send_cfg() {
+    if (!_params["cfg_cmd"].empty())
+      _serialPort->write_line(_params["cfg_cmd"].get<string>());
+  }
+
   bool _setup_error = false;
   json _data, _params;
   unique_ptr<SerialPort> _serialPort;
